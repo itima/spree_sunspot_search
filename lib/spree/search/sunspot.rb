@@ -1,6 +1,6 @@
 module Spree
   module Search
-    class Sunspot < defined?(Spree::Search::MultiDomain) ? Spree::Search::MultiDomain : Spree::Core::Search::Base
+    class Sunspot < defined?(Spree::Search::MultiDomain) ? Spree::Search::MultiDomain :  Spree::Search::Base
 
       def retrieve_products
         retrieve_results.results
@@ -16,7 +16,7 @@ module Spree
         conf = Spree::Search.configuration
 
         # send(name) looks in @properties
-        @properties[:sunspot] = ::Sunspot.search(Spree::Product) do
+        @properties[:sunspot] = ::Sunspot.search(Product) do
           # This is a little tricky to understand
           #     - we are sending the block value as a method
           #     - Spree::Search::Base is using method_missing() to return the param values

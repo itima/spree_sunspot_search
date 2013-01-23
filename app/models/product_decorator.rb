@@ -1,4 +1,4 @@
-Spree::Product.class_eval do
+Product.class_eval do
   searchable do
     boolean :is_active, :using => :is_active?
 
@@ -23,7 +23,7 @@ Spree::Product.class_eval do
     # pull the product's taxon, and all its ancestors: this allows us to intersect the display with the current taxon's
     # children and allow the user to intuitively 'dig down' into the product heirarchy
     # root taxon is excluded: doesn't really allow for intuitive navigation
-    integer :taxon_ids, :multiple => true, :references => Spree::Taxon do
+    integer :taxon_ids, :multiple => true, :references => Taxon do
       taxons.map { |t| t.self_and_ancestors.select { |tx| !tx.root? }.map(&:id) }.flatten(1).uniq
     end
 
@@ -48,7 +48,6 @@ Spree::Product.class_eval do
     if respond_to?(:stores)
       integer :store_ids, :multiple => true, :references => Store
     end
-
   end
 
   def is_active?
@@ -58,6 +57,11 @@ Spree::Product.class_eval do
   end
 
   private
+
+  def property(property_name)
+    return nil unless prop = properties.find_by_name(property_name)
+    product_properties.find_by_property_id(prop.id).try(:value)
+  end
 
   def price_range
     max = 0
@@ -73,14 +77,13 @@ Spree::Product.class_eval do
 
     sql = <<-eos
       SELECT DISTINCT ov.id, ov.presentation
-      FROM spree_option_values AS ov
-      LEFT JOIN spree_option_types AS ot ON (ov.option_type_id = ot.id)
-      LEFT JOIN spree_option_values_variants AS ovv ON (ovv.option_value_id = ov.id)
-      LEFT JOIN spree_variants AS v ON (ovv.variant_id = v.id)
-      LEFT JOIN spree_products AS p ON (v.product_id = p.id)
+      FROM option_values AS ov
+      LEFT JOIN option_types AS ot ON (ov.option_type_id = ot.id)
+      LEFT JOIN option_values_variants AS ovv ON (ovv.option_value_id = ov.id)
+      LEFT JOIN variants AS v ON (ovv.variant_id = v.id)
+      LEFT JOIN products AS p ON (v.product_id = p.id)
       WHERE (ot.name = '#{option_name}' AND p.id = #{self.id});
     eos
-    Spree::OptionValue.find_by_sql(sql)
+    OptionValue.find_by_sql(sql)
   end
 end
-
